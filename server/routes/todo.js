@@ -4,8 +4,8 @@ const router = express.Router();
 
 // All the todo List
 router.get("/", (req, res, next) => {
-  const page = req.params.page || 1;
-  const limit = req.params.limit || 5;
+  const page = req.query.page || 1;
+  const limit = req.query.limit || 5;
   const skip = (page - 1) * limit;
 
   Todo.find()
