@@ -4,8 +4,14 @@ const router = express.Router();
 
 // All the todo List
 router.get("/", (req, res, next) => {
+  const page = req.params.page || 1;
+  const limit = req.params.limit || 5;
+  const skip = (page - 1) * limit;
+
   Todo.find()
     .select("-__v")
+    .skip(+skip)
+    .limit(+limit)
     .exec()
     .then((Todos) => {
       const response = {
@@ -41,7 +47,7 @@ router.get("/:id", (req, res, next) => {
         res.status(200).json(result);
       } else {
         res.status(404).json({
-          message: "No Todo found for this Id :" + id,
+          message: "No Todo found with given Id :" + id,
         });
       }
     })
@@ -82,26 +88,54 @@ router.post("/create", (req, res, next) => {
 });
 
 // Edit Todo by Id
-router.put("/", (req, res, next) => {});
+router.patch("/:id", (req, res, next) => {
+  const id = req.params.id;
+  const updateOps = {};
+  for (const ops of req.body) {
+    updateOps[ops.TodoN] = ops.value;
+  }
+
+  Todo.updateOne({ _id: id }, { $set: updateOps })
+    .then((result) => {
+      res.status(200).json({
+        message: "Todo Updated",
+        request: {
+          type: "GET",
+          url: "http://localhost:4000/todo/" + id,
+        },
+      });
+    })
+    .catch((err) => {
+      res.status(500).json({
+        error: err,
+      });
+    });
+});
 
 // Delete Todo by Id
 router.delete("/:id", (req, res, next) => {
   const id = req.params.id;
-  Todo.remove({ _id: id })
+  Todo.deleteOne({ _id: id })
     .exec()
     .then((result) => {
-      res.status(200).json({
-        message: "Todo Deleted",
-        request: {
-          type: "POST",
-          url: "http://localhost:4000/todo",
-          body: {
-            title: "String",
-            content: "String",
-            completed: "Boolean",
+      if (result.deletedCount == 0) {
+        res.status(404).json({
+          message: "No Todo found with given Id :" + id,
+        });
+      } else {
+        res.status(200).json({
+          message: "Todo Deleted",
+          request: {
+            type: "POST",
+            url: "http://localhost:4000/todo",
+            body: {
+              title: "String",
+              content: "String",
+              completed: "Boolean",
+            },
           },
-        },
-      });
+        });
+      }
     })
     .catch((err) => {
       res.status(500).json({
