@@ -1,5 +1,6 @@
 const express = require("express");
 const TodoRouter = require("./routes/todo");
+const UserRouter = require("./routes/user");
 const connectDB = require("./config/db");
 connectDB();
 const app = express();
